@@ -230,12 +230,15 @@ func buildOutboundNetworkFilters(node *model.Proxy,
 	routes []*networking.RouteDestination, push *model.PushContext,
 	port *model.Port, configMeta config.Meta,
 ) []*listener.Filter {
-	service := push.ServiceForHostname(node, host.Name(routes[0].Destination.Host))
-	var destinationRule *networking.DestinationRule
-	if service != nil {
-		destinationRule = CastDestinationRule(node.SidecarScope.DestinationRule(model.TrafficDirectionOutbound, node, service.Hostname).GetRule())
+	if len(routes) == 0 {
+		return nil
 	}
+	var destinationRule *networking.DestinationRule
 	if len(routes) == 1 {
+		service := push.ServiceForHostname(node, host.Name(routes[0].Destination.Host))
+		if service != nil {
+			destinationRule = CastDestinationRule(node.SidecarScope.DestinationRule(model.TrafficDirectionOutbound, node, service.Hostname).GetRule())
+		}
 		clusterName := istioroute.GetDestinationCluster(routes[0].Destination, service, port.Port)
 		statPrefix := clusterName
 		// If stat name is configured, build the stat prefix from configured pattern.
